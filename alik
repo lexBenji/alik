@@ -1,0 +1,253 @@
+#!/usr/bin/python3
+
+from sys import argv
+
+if len(argv) == 1:
+   raise SystemExit
+
+file=""
+fset=False
+
+line=0
+col=0
+
+state=0
+word=""
+write=False
+raw=False
+_str=""
+quote=""
+vname=""
+value=""
+var={
+      "end":"\n"
+      }
+constant={
+      "newline":"\n",
+      "backslash":"\\",
+      "backspace":"\b",
+      "reset":"\33[0m",
+      "fblack":"\33[30m",
+      "bblack":"\33[40m",
+      "fred":"\33[31m",
+      "bred":"\33[41m",
+      "fgreen":"\33[32m",
+      "bgreen":"\33[42m",
+      "fyellow":"\33[33m",
+      "byellow":"\33[43m",
+      "fblue":"\33[34m",
+      "bblue":"\33[44m",
+      "fpurple":"\33[35m",
+      "bpurple":"\33[45m",
+      "fcyan":"\33[36m",
+      "bcyan":"\33[46m",
+      "fwhite":"\33[37m",
+      "bwhite":"\33[47m"
+      }
+
+version="0.01"
+
+valid_flags=[
+      "-v",
+      "-version"
+      ]
+
+for arg in argv:
+   if arg.endswith(".alik"):
+      file=arg
+      fset=True
+   elif arg.startswith("-") and arg in valid_flags:
+      if arg == "-v" or arg == "-version":
+         print("Current version: {0}".format(version))
+         raise SystemExit
+
+if fset==False:
+   raise SystemExit
+
+with open(file) as rf:
+   rf=rf.readlines()
+   while True:
+      if line==len(rf):
+         break
+      if state == 0:
+         word+=rf[line][col]
+         if word == "echo ":
+            write=True
+            word=""
+         elif word == "raw":
+            raw=True
+            word=""
+         elif word == "$":
+            state=4
+            word=""
+         elif word == "&":
+            state=7
+            word=""
+         elif word == "var ":
+            state = 2
+            word = ""
+         elif word == "const ":
+            state=8
+            word=""
+         elif word in "\n\t ":
+            word=""
+         elif rf[line][col] == ";":
+            line+=1
+            col=-1
+            word=""
+         elif word in "\"'":
+            quote=rf[line][col]
+            state=1
+            word=""
+      elif state==1:
+         if rf[line][col] in "\"'" and quote == rf[line][col]:
+            if write == True:
+               if raw==True:
+                  print(repr(_str),end=var["end"])
+               else:
+                  print(_str,end=var["end"])
+               var["end"]="\n"
+               write=False
+               _str=""
+               state=0
+            elif write==False:
+               raise SyntaxError("Unprinted string in line {0}".format(line))
+            quote=""
+         else:
+            _str+=rf[line][col]
+      elif state==2:
+         if vname in constant:
+            raise SyntaxError("{0} is already asigned as a constant".format(vname))
+         elif rf[line][col] == " ":
+            state=3
+         elif rf[line][col] == ";":
+            var[vname]=""
+            vname=""
+            line+=1
+            col=-1
+            state=0
+         else:
+            vname+=rf[line][col]
+      elif state == 3:
+         if rf[line][col] in "\"'":
+            state=5
+            quote=rf[line][col]
+         elif rf[line][col] == "$":
+            state=6
+         elif rf[line][col] == ";":
+            state=0
+            var[vname]=value
+            value=""
+            vname=""
+            line+=1
+            col=-1
+         elif rf[line][col] == " ":
+            value+="_"
+         else:
+            value+=rf[line][col]
+      elif state==4:
+         if rf[line][col] == ";":
+            if write==True:
+               if raw==True:
+                  print(repr(var[vname]),end=var["end"])
+               else:
+                  print(var[vname],end=var["end"])
+               var["end"]="\n"
+               vname=""
+               state=0
+               line+=1
+               col=-1
+               write=False
+            else:
+               raise SyntaxError("Unprinted variable in line {0}".format(line))
+         else:
+            vname+=rf[line][col]
+      elif state==5:
+         if rf[line][col] in "\"'" and quote == rf[line][col]:
+            var[vname] = value
+            vname=""
+            value=""
+            state=0
+         else:
+            value+=rf[line][col]
+      elif state==6:
+         if rf[line][col] == ";":
+            var[vname]=var[value]
+            vname=""
+            value=""
+            state=0
+            line+=1
+            col=-1
+         else:
+            value+=rf[line][col]
+      elif state==7:
+         if rf[line][col] == ";":
+            if write==True:
+               if raw==True:
+                  print(repr(constant[vname]),end=var["end"])
+               else:
+                  print(constant[vname],end=var["end"])
+            vname=""
+            var["end"]="\n"
+            state=0
+            line+=1
+            col=-1
+         else:
+            vname+=rf[line][col]
+      elif state==8:
+         if rf[line][col] == " ":
+            state=9
+         else:
+            vname+=rf[line][col]
+      elif state==9:
+         if vname in constant:
+            raise SyntaxError("{0} is a constant that is already asigned".format(vname))
+         if rf[line][col] == ";":
+            constant[vname]=value
+            vname=""
+            value=""
+         elif rf[line][col] == "$":
+            state=0xa
+         elif rf[line][col] == "&":
+            state=0xb
+         elif rf[line][col] in "\"'":
+            state=0xc
+            quote=rf[line][col]
+         else:
+            value+=rf[line][col]
+      elif state==10:
+         if rf[line][col] == ";":
+            constant[vname]=var[value]
+            vname=""
+            var=""
+            state=0
+            line+=1
+            col=-1
+         elif rf[line][col] == " ":
+            value+="_"
+         else:
+            value+=rf[line][col]
+      elif state==11:
+         if rf[line][col] == ";":
+            if not value in constant:
+               raise SyntaxError("{0} is not asigned".format(value))
+            constant[vname]=constant[value]
+            vname=""
+            value=""
+            state=0
+            line+=1
+            col=-1
+         elif rf[line][col] == " ":
+            value+="_"
+         else:
+            value+=rf[line][col]
+      elif state == 12:
+         if rf[line][col] in "\"'" and quote == rf[line][col]:
+            constant[vname]=value
+            value=""
+            vname=""
+            state=0
+            quote=""
+         else:
+            value+=rf[line][col]
+      col+=1
