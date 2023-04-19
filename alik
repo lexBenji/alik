@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from sys import argv
+import base64
 
 if len(argv) == 1:
    raise SystemExit
@@ -74,6 +75,8 @@ with open(file) as rf:
          if word == "echo ":
             write=True
             word=""
+         elif word == "exit":
+            raise SystemExit
          elif word == "raw":
             raw=True
             word=""
