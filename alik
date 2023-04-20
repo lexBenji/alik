@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 from sys import argv
-import base64
 
 if len(argv) == 1:
    raise SystemExit
@@ -53,6 +52,8 @@ valid_flags=[
       "-version"
       ]
 
+cur=""
+
 for arg in argv:
    if arg.endswith(".alik"):
       file=arg
@@ -70,8 +71,9 @@ with open(file) as rf:
    while True:
       if line==len(rf):
          break
+      cur=rf[line][col]
       if state == 0:
-         word+=rf[line][col]
+         word+=cur
          if word == "echo ":
             write=True
             word=""
@@ -92,52 +94,49 @@ with open(file) as rf:
          elif word == "const ":
             state=8
             word=""
-         elif word in "\n\t ":
+         elif word in "\t ":
             word=""
-         elif rf[line][col] == ";":
+         elif word == "\n":
+            raise SyntaxError("Line {0} not ended".format(line+1))
+         elif cur == ";":
+            if write == True:
+               print(_str,end=var["end"])
+               var["end"] = "\n"
             line+=1
             col=-1
             word=""
          elif word in "\"'":
-            quote=rf[line][col]
+            quote=cur
             state=1
             word=""
       elif state==1:
-         if rf[line][col] in "\"'" and quote == rf[line][col]:
-            if write == True:
-               if raw==True:
-                  print(repr(_str),end=var["end"])
-               else:
-                  print(_str,end=var["end"])
-               var["end"]="\n"
-               write=False
-               _str=""
-               state=0
-            elif write==False:
-               raise SyntaxError("Unprinted string in line {0}".format(line))
+         if cur in "\"'" and quote == cur:
+            state=0
             quote=""
+         elif cur == "{":
+            state=13
          else:
-            _str+=rf[line][col]
+            _str+=cur
       elif state==2:
          if vname in constant:
             raise SyntaxError("{0} is already asigned as a constant".format(vname))
-         elif rf[line][col] == " ":
+         elif cur == " ":
             state=3
-         elif rf[line][col] == ";":
+         elif cur == ";":
             var[vname]=""
             vname=""
             line+=1
             col=-1
             state=0
          else:
-            vname+=rf[line][col]
+            vname+=cur
       elif state == 3:
-         if rf[line][col] in "\"'":
+         if cur in "\"'":
             state=5
-            quote=rf[line][col]
-         elif rf[line][col] == "$":
+            quote=cur
+         elif cur == "$":
             state=6
-         elif rf[line][col] == ";":
+         elif cur == ";":
             state=0
             var[vname]=value
             value=""
@@ -151,18 +150,11 @@ with open(file) as rf:
       elif state==4:
          if rf[line][col] == ";":
             if write==True:
-               if raw==True:
-                  print(repr(var[vname]),end=var["end"])
-               else:
-                  print(var[vname],end=var["end"])
-               var["end"]="\n"
-               vname=""
-               state=0
-               line+=1
-               col=-1
-               write=False
-            else:
-               raise SyntaxError("Unprinted variable in line {0}".format(line))
+               print(var[vname],end=var["end"])
+            line+=1
+            col=-1
+            state=0
+            vname=""
          else:
             vname+=rf[line][col]
       elif state==5:
@@ -195,6 +187,10 @@ with open(file) as rf:
             state=0
             line+=1
             col=-1
+         elif cur == " ":
+            _str+=constant[vname]+" "
+            vname=""
+            state=0
          else:
             vname+=rf[line][col]
       elif state==8:
@@ -245,12 +241,19 @@ with open(file) as rf:
          else:
             value+=rf[line][col]
       elif state == 12:
-         if rf[line][col] in "\"'" and quote == rf[line][col]:
+         if cur in "\"'" and quote == cur:
             constant[vname]=value
             value=""
             vname=""
             state=0
             quote=""
          else:
-            value+=rf[line][col]
+            value+=cur
+      elif state==13:
+         if cur == "}":
+            _str+=var[vname]
+            vname=""
+            state=1
+         else:
+            vname+=cur
       col+=1
