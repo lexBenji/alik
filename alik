@@ -19,11 +19,13 @@ raw=False
 _str=""
 quote=""
 
-version="0.01"
+version="1.01"
 
 valid_flags=[
       "-v",
-      "-version"
+      "-version",
+      "-h",
+      "-help"
       ]
 
 cur=""
@@ -35,6 +37,8 @@ for arg in argv:
    elif arg.startswith("-") and arg in valid_flags:
       if arg == "-v" or arg == "-version":
          print("Current version: {0}".format(version))
+      elif arg == "-h" or arg == "-help":
+         print(valid_flags)
          raise SystemExit
 
 if fset==False:
@@ -53,6 +57,9 @@ with open(file) as rf:
             if word == "echo":
                write=True
                word=""
+            elif word == "raw":
+               raw=True
+               word=""
             elif cur in "\"'":
                quote=cur
                state=1
@@ -60,10 +67,24 @@ with open(file) as rf:
                pass
             elif cur == "\n":
                if write==True:
-                  print(_str)
+                  if raw==True:
+                     print(repr(_str)[1:len(repr(_str))-1])
+                     raw=False
+                  else:
+                     print(_str)
+                  write=False
                   _str=""
-                  line+=1
-                  col=-1
+               line+=1
+               col=-1
+            elif cur == ";":
+               if write==True:
+                  if raw==True:
+                     print(repr(_str)[1:len(repr(_str))-1])
+                     raw=False
+                  else:
+                     print(_str)
+                  write=False
+                  _str=""
       elif state==1:
          if cur in "\"'" and quote==cur:
             state=0
