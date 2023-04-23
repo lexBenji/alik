@@ -15,6 +15,7 @@ col=0
 state=0
 word=""
 write=False
+writeln=False
 raw=False
 _str=""
 quote=""
@@ -26,6 +27,11 @@ valid_flags=[
       "-version",
       "-h",
       "-help"
+      ]
+
+keyword=[
+      "echo",
+      "raw"
       ]
 
 cur=""
@@ -47,15 +53,16 @@ if fset==False:
 with open(file) as rf:
    rf=rf.readlines()
    while True:
-      if line==len(rf):
-         break
       cur=rf[line][col]
       if state==0:
          if cur in alpha:
             word+=cur
          else:
-            if word == "echo":
+            if word == "write":
                write=True
+               word=""
+            elif word=="writeln":
+               writeln=True
                word=""
             elif word == "raw":
                raw=True
@@ -66,25 +73,45 @@ with open(file) as rf:
             elif cur in " \t":
                pass
             elif cur == "\n":
-               if write==True:
-                  if raw==True:
+               if write:
+                  if raw:
+                     print(repr(_str)[1:len(repr(_str))-1],end="")
+                     raw=False
+                  else:
+                     print(_str,end="")
+                  write=False
+                  _str=""
+               elif writeln:
+                  if raw:
                      print(repr(_str)[1:len(repr(_str))-1])
                      raw=False
                   else:
                      print(_str)
-                  write=False
+                  writeln=False
                   _str=""
+               if line==len(rf)-1:
+                  raise SystemExit
                line+=1
                col=-1
             elif cur == ";":
-               if write==True:
-                  if raw==True:
+               if write:
+                  if raw:
+                     print(repr(_str)[1:len(repr(_str))-1],end="")
+                     raw=False
+                  else:
+                     print(_str,end="")
+                  write=False
+                  _str=""
+               elif writeln:
+                  if raw:
                      print(repr(_str)[1:len(repr(_str))-1])
                      raw=False
                   else:
                      print(_str)
-                  write=False
+                  writeln=False
                   _str=""
+            elif not word in keywords:
+               raise SyntaxError("{0} is not a keyword".format(word))
       elif state==1:
          if cur in "\"'" and quote==cur:
             state=0
