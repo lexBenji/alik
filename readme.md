@@ -12,4 +12,4 @@ writeln "Hello World"
 
 # Note
 
-You cannot store data <sub>(for now)</sub>
+You cannot store data <sup>(for now)</sup>
