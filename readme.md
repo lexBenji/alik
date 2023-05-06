@@ -4,10 +4,8 @@ Alik programming language but rewritten.
 
 # Examples
 
-Print **Hello World**
-
 ```bash
-writeln "Hello World"
+writeln "Hello World";  | prints 'hello world' to console
 ```
 
 # Note
