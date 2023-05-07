@@ -5,6 +5,7 @@ from subprocess import call
 from string import ascii_letters as alpha
 
 if len(argv) == 1:
+   print("USAGE: ./alik <filename>.alik [flags]")
    raise SystemExit
 
 file=""
@@ -52,7 +53,7 @@ for arg in argv:
          print(valid_flags)
          raise SystemExit
       elif arg == "-c" or arg == "-compile":
-         run=True
+         run=False
 
 if fset==False:
    raise SystemExit
