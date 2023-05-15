@@ -4,10 +4,13 @@ Alik programming language but rewritten.
 
 # Examples
 
-```bash
-writeln "Hello World";  | prints 'hello world' to console
+```
+> this program prints 'Hello World'
+writeln "Hello World";
 ```
 
-# Note
-
-You cannot store data <sup>(for now)</sup>
+```
+> this program demonstrates how to declare variables
+var i = 10;
+writeln i;
+```

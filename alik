@@ -3,12 +3,14 @@
 from sys import argv
 from subprocess import call
 from string import ascii_letters as alpha
+from string import digits
 
 if len(argv) == 1:
    print("USAGE: ./alik <filename>.alik [flags]")
    raise SystemExit
 
 file=""
+out=""
 fset=False
 run=True
 
@@ -21,6 +23,8 @@ write=False
 writeln=False
 _str=""
 cmt=""
+vname=""
+value=""
 quote=""
 
 version="1.01"
@@ -29,21 +33,23 @@ valid_flags=[
       "-v",
       "-version",
       "-h",
-      "-help",
-      "-c",
-      "-compile"
+      "-help"
       ]
 
 keyword=[
       "write",
-      "writeln"
+      "writeln",
+      "var"
       ]
+
+var=[]
 
 cur=""
 
 for arg in argv:
    if arg.endswith(".alik"):
       file=arg
+      out=file[:len(file)-5]+".py"
       fset=True
    elif arg.startswith("-") and arg in valid_flags:
       if arg == "-v" or arg == "-version":
@@ -52,15 +58,13 @@ for arg in argv:
       elif arg == "-h" or arg == "-help":
          print(valid_flags)
          raise SystemExit
-      elif arg == "-c" or arg == "-compile":
-         run=False
 
 if fset==False:
    raise SystemExit
 
 with open(file) as rf:
    rf=rf.readlines()
-   with open(file[:len(file)-5]+".py","w") as wf:
+   with open(out,"w") as wf:
       while True:
          if line==len(rf):
             break
@@ -77,6 +81,16 @@ with open(file) as rf:
                   write=False
                else:
                   raise SyntaxError("'{0}' is not a keyword".format(word))
+               word=""
+            elif word == "var ":
+               state=3
+               word=""
+            elif word in var:
+               wf.write(word)
+            elif cur in digits:
+               wf.write(cur)
+            elif cur=="=":
+               wf.write(cur)
                word=""
             elif cur==";":
                if write:
@@ -98,15 +112,15 @@ with open(file) as rf:
                quote=cur
                state=1
                word=""
-            elif cur=="|":
+            elif cur==">":
                state=2
                wf.write("#")
                word=""
          elif state==1:
             if cur==quote:
-               quote=""
-               wf.write("\""+_str+"\"")
+               wf.write(quote+_str+quote)
                _str=""
+               quote=""
                state=0
             else:
                _str+=cur
@@ -119,10 +133,24 @@ with open(file) as rf:
                state=0
             else:
                cmt+=cur
+         elif state==3:
+            if cur=="=":
+               if vname in keyword:
+                  raise SyntaxError("{0} is a keyword".format(vname))
+               wf.write(vname+"=")
+               state=0
+               var.append(vname)
+               vname=""
+            elif cur==" ":
+               if vname in keyword:
+                  raise SyntaxError("{0} is a keyword".format(vname))
+               wf.write(vname+" ")
+               state=0
+               var.append(vname)
+               vname=""
+            else:
+               vname+=cur
          col+=1
 
-if run:
-   call(["python3",file[:len(file)-5]+".py"])
-   call(["rm",file[:len(file)-5]+".py"])
-else:
-   pass
+call(["python3",out])
+call(["rm",out])
