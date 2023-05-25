@@ -5,18 +5,6 @@ from subprocess import call
 from string import ascii_letters as alpha
 from string import digits
 
-if len(argv) == 1:
-   print("USAGE: ./alik <filename>.alik [flags]")
-   raise SystemExit
-
-file=""
-out=""
-fset=False
-run=True
-
-line=0
-col=0
-
 state=0
 word=""
 write=False
@@ -26,6 +14,17 @@ cmt=""
 vname=""
 value=""
 quote=""
+var={}
+
+if len(argv) == 1:
+    print("Not Enough Arguments")
+    raise SystemExit
+
+file=""
+fset=False
+
+line=0
+col=0
 
 version="1.01"
 
@@ -42,14 +41,11 @@ keyword=[
       "var"
       ]
 
-var=[]
-
 cur=""
 
 for arg in argv:
    if arg.endswith(".alik"):
       file=arg
-      out=file[:len(file)-5]+".py"
       fset=True
    elif arg.startswith("-") and arg in valid_flags:
       if arg == "-v" or arg == "-version":
@@ -60,97 +56,107 @@ for arg in argv:
          raise SystemExit
 
 if fset==False:
-   raise SystemExit
+    print("USAGE: ./alik [flags] [filename].alik")
 
 with open(file) as rf:
-   rf=rf.readlines()
-   with open(out,"w") as wf:
-      while True:
-         if line==len(rf):
+    rf=rf.readlines()
+    while True:
+        if line==len(rf):
             break
-         cur=rf[line][col]
-         if state==0:
+        cur=rf[line][col]
+        if state==0:
             word+=cur
             if word=="write":
-               write=True
-               wf.write("print(")
-               word=""
+                write=True
+                word=""
             elif word=="ln":
-               if write:
-                  writeln=True
-                  write=False
-               else:
-                  raise SyntaxError("'{0}' is not a keyword".format(word))
-               word=""
-            elif word == "var ":
-               state=3
-               word=""
-            elif word in var:
-               wf.write(word)
-            elif cur in digits:
-               wf.write(cur)
-            elif cur=="=":
-               wf.write(cur)
-               word=""
-            elif cur==";":
-               if write:
-                  wf.write(",end=\"\")")
-                  write=False
-               elif writeln:
-                  wf.write(")")
-                  writeln=False
-               word=""
+                if not write:
+                    print(f"Error at line {line+1:2}:\
+                            'ln' is not a keyword")
+                    raise SystemExit
+                write=False
+                writeln=True
+                word=""
+            elif word=="var ":
+                state=2
+                vset=True
+                word=""
+            elif cur=="$":
+                state=5
+                word=""
             elif cur=="\n":
-               wf.write("\n")
-               line+=1
-               col=-1
-               word=""
-            elif cur in " \t":
-               wf.write(cur)
-               word=""
+                line+=1
+                col=-1
+                word=""
             elif cur in "\"'":
-               quote=cur
-               state=1
-               word=""
-            elif cur==">":
-               state=2
-               wf.write("#")
-               word=""
-         elif state==1:
+                state=1
+                quote=cur
+                word=""
+        elif state==1:
+            if quote==cur:
+                if write:
+                    print(_str,end="")
+                    write=False
+                elif writeln:
+                    print(_str)
+                    writeln=False
+                else:
+                    print(f"Error at line {line+1:2}:\
+                            string not printed")
+                    raise SystemExit
+                _str=""
+                quote=""
+                state=0
+            else:
+                _str+=cur
+        elif state==2:
+            if cur==" ":
+                state=3
+            else:
+                vname+=cur
+        elif state==3:
+            if cur==" ":
+                pass
+            elif cur=="\n":
+                if value=="true":
+                    var[vname]=True
+                elif value=="false":
+                    vat[vname]=False
+                else:
+                    try:
+                        var[vname]=int(value)
+                    except:
+                        var[vname]=float(value)
+                line+=1
+                col=-1
+                vset=False
+                vname=""
+                value=""
+                state=0
+            elif cur in "\"'":
+                quote=cur
+                state=4
+            else:
+                value+=cur
+        elif state==4:
             if cur==quote:
-               wf.write(quote+_str+quote)
-               _str=""
-               quote=""
-               state=0
+                state=0
+                var[vname]=value
+                vname=""
+                value=""
             else:
-               _str+=cur
-         elif state==2:
+                value+=cur
+        elif state==5:
             if cur=="\n":
-               wf.write(cmt+"\n")
-               cmt=""
-               line+=1
-               col=-1
-               state=0
+                if write:
+                    print(var[vname],end="")
+                    write=False
+                elif writeln:
+                    print(var[vname])
+                line+=1
+                col=-1
+                state=0
+                vname=""
             else:
-               cmt+=cur
-         elif state==3:
-            if cur=="=":
-               if vname in keyword:
-                  raise SyntaxError("{0} is a keyword".format(vname))
-               wf.write(vname+"=")
-               state=0
-               var.append(vname)
-               vname=""
-            elif cur==" ":
-               if vname in keyword:
-                  raise SyntaxError("{0} is a keyword".format(vname))
-               wf.write(vname+" ")
-               state=0
-               var.append(vname)
-               vname=""
-            else:
-               vname+=cur
-         col+=1
-
-call(["python3",out])
-call(["rm",out])
+                vname+=cur
+        col+=1
