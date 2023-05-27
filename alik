@@ -5,6 +5,10 @@ from subprocess import call
 from string import ascii_letters as alpha
 from string import digits
 
+if len(argv) == 1:
+    print("Not Enough Arguments")
+    raise SystemExit
+
 state=0
 word=""
 write=False
@@ -15,10 +19,6 @@ vname=""
 value=""
 quote=""
 var={}
-
-if len(argv) == 1:
-    print("Not Enough Arguments")
-    raise SystemExit
 
 file=""
 fset=False
