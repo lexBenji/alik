@@ -2,11 +2,8 @@
 
 from sys import argv
 from subprocess import call
-from string import ascii_letters as alpha
-from string import digits
 
 if len(argv) == 1:
-    print("Not Enough Arguments")
     raise SystemExit
 
 state=0
@@ -18,7 +15,9 @@ cmt=""
 vname=""
 value=""
 quote=""
-var={}
+var={
+"cls":"\33c"
+}
 
 file=""
 fset=False
@@ -61,6 +60,7 @@ if fset==False:
 with open(file) as rf:
     rf=rf.readlines()
     while True:
+        var["cls"]="\33c"
         if line==len(rf):
             break
         cur=rf[line][col]
@@ -84,9 +84,12 @@ with open(file) as rf:
             elif cur=="$":
                 state=5
                 word=""
-            elif cur=="\n":
+            elif cur==";":
                 line+=1
                 col=-1
+                word=""
+            elif cur=="#":
+                state=6
                 word=""
             elif cur in "\"'":
                 state=1
@@ -117,7 +120,7 @@ with open(file) as rf:
         elif state==3:
             if cur==" ":
                 pass
-            elif cur=="\n":
+            elif cur==";":
                 if value=="true":
                     var[vname]=True
                 elif value=="false":
@@ -147,16 +150,22 @@ with open(file) as rf:
             else:
                 value+=cur
         elif state==5:
-            if cur=="\n":
+            if cur==";":
                 if write:
                     print(var[vname],end="")
                     write=False
                 elif writeln:
                     print(var[vname])
+                    writeln=False
                 line+=1
                 col=-1
                 state=0
                 vname=""
             else:
                 vname+=cur
+        elif state==6:
+            if cur=="\n":
+                state=0
+                line+=1
+                col=-1
         col+=1
