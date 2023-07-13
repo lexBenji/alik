@@ -10,6 +10,8 @@ state=0
 word=""
 write=False
 writeln=False
+loop=False
+loopline=-1
 _str=""
 cmt=""
 vname=""
@@ -25,7 +27,7 @@ fset=False
 line=0
 col=0
 
-version="1.01"
+version="2.00"
 
 valid_flags=[
       "-v",
@@ -77,6 +79,16 @@ with open(file) as rf:
                 write=False
                 writeln=True
                 word=""
+            elif word=="loop":
+                loop=True
+                loopline=line
+                word=""
+            elif word=="end":
+                if loop==True:
+                    line=loopline
+                    word=""
+                else:
+                    raise SystemExit
             elif word=="var ":
                 state=2
                 vset=True
@@ -84,12 +96,15 @@ with open(file) as rf:
             elif cur=="$":
                 state=5
                 word=""
-            elif cur==";":
+            elif cur=="\n":
                 line+=1
                 col=-1
                 word=""
             elif cur=="#":
                 state=6
+                word=""
+            elif cur=="{":
+                state=7
                 word=""
             elif cur in "\"'":
                 state=1
@@ -120,7 +135,7 @@ with open(file) as rf:
         elif state==3:
             if cur==" ":
                 pass
-            elif cur==";":
+            elif cur=="\n":
                 if value=="true":
                     var[vname]=True
                 elif value=="false":
@@ -150,7 +165,7 @@ with open(file) as rf:
             else:
                 value+=cur
         elif state==5:
-            if cur==";":
+            if cur=="\n":
                 if write:
                     print(var[vname],end="")
                     write=False
@@ -168,4 +183,10 @@ with open(file) as rf:
                 state=0
                 line+=1
                 col=-1
+        elif state==7:
+            if cur=="\n":
+                line+=1
+                col=-1
+            elif cur=="}":
+                state=0
         col+=1
