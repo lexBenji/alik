@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import time
 from sys import argv
 from subprocess import call
 
@@ -13,12 +14,29 @@ writeln=False
 loop=False
 loopline=-1
 _str=""
-cmt=""
+st=""
 vname=""
 value=""
 quote=""
 var={
-"cls":"\33c"
+"cls":"\33c",
+"reset":"\33[0m",
+"fg_black":"\33[30m",
+"bg_black":"\33[40m",
+"fg_red":"\33[31m",
+"bg_red":"\33[41m",
+"fg_green":"\33[32m",
+"bg_green":"\33[42m",
+"fg_yellow":"\33[33m",
+"bg_yellow":"\33[43m",
+"fg_blue":"\33[34m",
+"bg_blue":"\33[44m",
+"fg_magenta":"\33[35m",
+"bg_magenta":"\33[45m",
+"fg_cyan":"\33[36m",
+"bg_cyan":"\33[46m",
+"fg_white":"\33[37m",
+"bg_white":"\33[47m"
 }
 
 file=""
@@ -48,6 +66,9 @@ for arg in argv:
    if arg.endswith(".alik"):
       file=arg
       fset=True
+   elif arg.endswith(".al"):
+      file=arg
+      fset=True
    elif arg.startswith("-") and arg in valid_flags:
       if arg == "-v" or arg == "-version":
          print("Current version: {0}".format(version))
@@ -73,8 +94,6 @@ with open(file) as rf:
                 word=""
             elif word=="ln":
                 if not write:
-                    print(f"Error at line {line+1:2}:\
-                            'ln' is not a keyword")
                     raise SystemExit
                 write=False
                 writeln=True
@@ -82,6 +101,9 @@ with open(file) as rf:
             elif word=="loop":
                 loop=True
                 loopline=line
+                word=""
+            elif word=="sleep ":
+                state=8
                 word=""
             elif word=="end":
                 if loop==True:
@@ -119,8 +141,6 @@ with open(file) as rf:
                     print(_str)
                     writeln=False
                 else:
-                    print(f"Error at line {line+1:2}:\
-                            string not printed")
                     raise SystemExit
                 _str=""
                 quote=""
@@ -133,13 +153,11 @@ with open(file) as rf:
             else:
                 vname+=cur
         elif state==3:
-            if cur==" ":
-                pass
-            elif cur=="\n":
+            if cur=="\n" or cur==" ":
                 if value=="true":
-                    var[vname]=True
+                    var[vname]=value
                 elif value=="false":
-                    vat[vname]=False
+                    var[vname]=value
                 else:
                     try:
                         var[vname]=int(value)
@@ -165,7 +183,7 @@ with open(file) as rf:
             else:
                 value+=cur
         elif state==5:
-            if cur=="\n":
+            if cur=="\n" or cur==" ":
                 if write:
                     print(var[vname],end="")
                     write=False
@@ -189,4 +207,22 @@ with open(file) as rf:
                 col=-1
             elif cur=="}":
                 state=0
+        elif state==8:
+            if cur=="\n" or cur==" ":
+                line+=1
+                col=-1
+                time.sleep(float(st))
+                st=""
+                state=0
+            elif cur=="$":
+                state=9
+            else:
+                st+=cur
+        elif state==9:
+            if cur=="\n" or cur==" ":
+                time.sleep(var[vname])
+                state=0
+                vname=""
+            else:
+                vname+=cur
         col+=1
