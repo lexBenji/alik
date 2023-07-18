@@ -2,10 +2,9 @@
 
 import time
 from sys import argv
-from subprocess import call
 
 if len(argv) == 1:
-    raise SystemExit
+    exit(127)
 
 state=0
 word=""
@@ -18,7 +17,8 @@ st=""
 vname=""
 value=""
 quote=""
-var={
+var={}
+const={
 "cls":"\33c",
 "reset":"\33[0m",
 "fg_black":"\33[30m",
@@ -57,7 +57,10 @@ valid_flags=[
 keyword=[
       "write",
       "writeln",
-      "var"
+      "var",
+      "sleep",
+      "loop",
+      "end"
       ]
 
 cur=""
@@ -72,10 +75,10 @@ for arg in argv:
    elif arg.startswith("-") and arg in valid_flags:
       if arg == "-v" or arg == "-version":
          print("Current version: {0}".format(version))
-         raise SystemExit
+         exit(127)
       elif arg == "-h" or arg == "-help":
          print(valid_flags)
-         raise SystemExit
+         exit(128)
 
 if fset==False:
     print("USAGE: ./alik [flags] [filename].alik")
@@ -83,7 +86,6 @@ if fset==False:
 with open(file) as rf:
     rf=rf.readlines()
     while True:
-        var["cls"]="\33c"
         if line==len(rf):
             break
         cur=rf[line][col]
@@ -94,7 +96,7 @@ with open(file) as rf:
                 word=""
             elif word=="ln":
                 if not write:
-                    raise SystemExit
+                    exit(105)
                 write=False
                 writeln=True
                 word=""
@@ -102,7 +104,7 @@ with open(file) as rf:
                 loop=True
                 loopline=line
                 word=""
-            elif word=="sleep ":
+            elif word=="sleep":
                 state=8
                 word=""
             elif word=="end":
@@ -110,9 +112,13 @@ with open(file) as rf:
                     line=loopline
                     word=""
                 else:
-                    raise SystemExit
+                    exit(105)
             elif word=="var ":
                 state=2
+                vset=True
+                word=""
+            elif word=="const ":
+                state=2.5
                 vset=True
                 word=""
             elif cur=="$":
@@ -141,7 +147,7 @@ with open(file) as rf:
                     print(_str)
                     writeln=False
                 else:
-                    raise SystemExit
+                    exit(105)
                 _str=""
                 quote=""
                 state=0
@@ -149,7 +155,16 @@ with open(file) as rf:
                 _str+=cur
         elif state==2:
             if cur==" ":
+                if vname in list(const.keys()):
+                    exit(105)
                 state=3
+            else:
+                vname+=cur
+        elif state==2.5:
+            if cur==" ":
+                if vname in list(const.keys()) or vname in list(var.keys()):
+                    exit(105)
+                state=3.5
             else:
                 vname+=cur
         elif state==3:
@@ -163,8 +178,9 @@ with open(file) as rf:
                         var[vname]=int(value)
                     except:
                         var[vname]=float(value)
-                line+=1
-                col=-1
+                if cur=="\n":
+                    line+=1
+                    col=-1
                 vset=False
                 vname=""
                 value=""
@@ -172,6 +188,29 @@ with open(file) as rf:
             elif cur in "\"'":
                 quote=cur
                 state=4
+            else:
+                value+=cur
+        elif state==3.5:
+            if cur=="\n" or cur==" ":
+                if value=="true":
+                    const[vname]=value
+                elif value=="false":
+                    const[vname]=value
+                else:
+                    try:
+                        const[vname]=int(value)
+                    except:
+                        const[vname]=float(value)
+                if cur=="\n":
+                    line+=1
+                    col=-1
+                vset=False
+                vname=""
+                value=""
+                state=0
+            elif cur in "\"'":
+                quote=cur
+                state=4.5
             else:
                 value+=cur
         elif state==4:
@@ -182,14 +221,32 @@ with open(file) as rf:
                 value=""
             else:
                 value+=cur
+        elif state==4.5:
+            if cur==quote:
+                state=0
+                const[vname]=value
+                vname=""
+                value=""
+            else:
+                value+=cur
         elif state==5:
             if cur=="\n" or cur==" ":
-                if write:
-                    print(var[vname],end="")
-                    write=False
-                elif writeln:
-                    print(var[vname])
-                    writeln=False
+                if vname in list(var.keys()) and vname in list(const.keys()):
+                    exit(105)
+                elif vname in list(var.keys()):
+                    if write:
+                        print(var[vname],end="")
+                        write=False
+                    elif writeln:
+                        print(var[vname])
+                        writeln=False
+                elif vname in list(const.keys()):
+                    if write:
+                        print(const[vname],end="")
+                        write=False
+                    elif writeln:
+                        print(const[vname])
+                        writeln=False
                 line+=1
                 col=-1
                 state=0
@@ -223,6 +280,9 @@ with open(file) as rf:
                 time.sleep(var[vname])
                 state=0
                 vname=""
+                if cur=="\n":
+                    col=-1
+                    line+=1
             else:
                 vname+=cur
         col+=1
