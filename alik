@@ -11,7 +11,8 @@ word=""
 write=False
 writeln=False
 loop=False
-loopline=-1
+loopset=False
+lline=-1
 _str=""
 st=""
 vname=""
@@ -102,15 +103,19 @@ with open(file) as rf:
                 word=""
             elif word=="loop":
                 loop=True
-                loopline=line
+                if loopset:
+                    exit(105)
+                loopset=True
+                lline=line
                 word=""
             elif word=="wait ":
                 state=8
                 word=""
             elif word=="end":
                 if loop==True:
-                    line=loopline
+                    line=lline
                     word=""
+                    loopset=False
                 else:
                     exit(105)
             elif word=="var ":
@@ -277,7 +282,7 @@ with open(file) as rf:
                 st+=cur
         elif state==9:
             if cur=="\n" or cur==" ":
-                time.sleep(var[vname])
+                time.sleep(float(var[vname]))
                 state=0
                 vname=""
                 if cur=="\n":
