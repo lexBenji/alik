@@ -21,9 +21,10 @@ var str "hello world"
 writeln $str
 ```
 
-Infinite loop in ALIK
+Infinite loop in ALIK that prints 'Hello World' then wait 1 second forever
 ```
 loop
 writeln "Hello World"
+wait 1
 end
 ```

@@ -104,7 +104,7 @@ with open(file) as rf:
                 loop=True
                 loopline=line
                 word=""
-            elif word=="sleep":
+            elif word=="wait ":
                 state=8
                 word=""
             elif word=="end":
