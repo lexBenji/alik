@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import time
+import time,os
 from sys import argv
 
 if len(argv) == 1:
@@ -81,8 +81,10 @@ for arg in argv:
          print(valid_flags)
          exit(128)
 
+if not os.path.exists(file):
+    exit(105)
 if fset==False:
-    print("USAGE: ./alik [flags] [filename].alik")
+    exit(105)
 
 with open(file) as rf:
     rf=rf.readlines()
