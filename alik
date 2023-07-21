@@ -91,7 +91,7 @@ with open(file) as rf:
     rf=rf.readlines()
     while True:
         if line==len(rf):
-            break
+            exit(0)
         cur=rf[line][col]
         if state==0:
             word+=cur
