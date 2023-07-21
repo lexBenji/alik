@@ -37,7 +37,8 @@ const={
 "fg_cyan":"\33[36m",
 "bg_cyan":"\33[46m",
 "fg_white":"\33[37m",
-"bg_white":"\33[47m"
+"bg_white":"\33[47m",
+"reverse":"\33[7m"
 }
 
 file=""
