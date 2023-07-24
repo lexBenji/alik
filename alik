@@ -56,15 +56,6 @@ valid_flags=[
       "-help"
       ]
 
-keyword=[
-      "write",
-      "writeln",
-      "var",
-      "sleep",
-      "loop",
-      "end"
-      ]
-
 cur=""
 
 for arg in argv:
